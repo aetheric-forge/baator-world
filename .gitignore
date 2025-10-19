@@ -1,0 +1,12 @@
+# .gitignore
+.DS_Store
+._*
+.__*
+__pycache__/
+*.pyc
+dist/
+build/
+.vscode/
+.coverage
+
+

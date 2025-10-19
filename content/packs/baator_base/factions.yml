@@ -1,0 +1,8 @@
+- id: auto
+  name: Valkyr's House
+  sigil: black_circuit
+  tags: [order, weave]
+- id: auto
+  name: Asmodean Directorate
+  sigil: ninefold_gear
+  tags: [control, ambition]

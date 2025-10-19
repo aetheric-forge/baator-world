@@ -1,0 +1,52 @@
+Screen {
+  layout: vertical;
+}
+
+Container {
+  layout: vertical;
+  background: black;
+}
+
+Horizontal {
+  height: 1fr;
+}
+
+PlayerList {
+  width: 30%;
+  background: #220022;
+  color: #dd88ff;
+  padding: 1 2;
+}
+
+LogPanel {
+  width: 70%;
+  background: #111;
+  color: #99ccff;
+  padding: 1 2;
+}
+
+Input {
+  border: tall #4b325a;
+}
+
+/* CommandConsole { */
+/*   dock: bottom; */
+/*   background: #330033; */
+/*   color: #ffffff; */
+/* } */
+/**/
+#cmd_input,
+Input {
+  dock: bottom;
+  min-height: 3;
+  background: #2a1f2a;
+  color: #f2f2f2; /* <- ensure visible text */
+  padding: 0 1;
+  border: tall #4b325a;
+}
+
+/* Optional: make placeholder readable */
+#bmd_input:focus {
+  color: #d9d9d9;
+  opacity: 0.85;
+}
