@@ -1,27 +1,34 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Type
-
-if TYPE_CHECKING:
-    from dm_tui.ui import DMApp
-    from dm_tui.commands import BaseCommand
+import shlex
+from typing import List
+from ..commands.base import CommandContext, REGISTRY
 
 class CommandRouter:
-    def  __init__(self):
-        self.handlers: dict[str, Type[BaseCommand]] = {}
+    def __init__(self, app) -> None:
+        self.app = app
 
-    def register_command(self, app: "DMApp", key: str, cmd_cls: Type[BaseCommand]):
-        self.handlers[key] = cmd_cls
-
-    def dispatch(self, app: "DMApp", line: str) -> None:
-        parts = line.strip().split()
-        if not parts:
+    def dispatch(self, line: str) -> None:
+        line = line.strip()
+        if not line:
             return
-        cmd_key = parts[0]
-        args = parts[1:]
+        # Optional leading slash
+        if line.startswith("/"):
+            line = line[1:]
+        try:
+            tokens = shlex.split(line)
+        except ValueError as e:
+            self.app.ui_log(f"parse error: {e}")
+            return
+        if not tokens:
+            return
+        name, args = tokens[0], tokens[1:]
+        spec = REGISTRY.resolve(name)
+        if not spec:
+            self.app.ui_log(f"Unknown command: {name}")
+            return
+        ctx = CommandContext(app=self.app, ui_log=self.app.ui_log, controller=self.app.controller)
+        try:
+            spec.fn(ctx, args)
+        except Exception as e:
+            self.app.ui_log(f"{name} error: {e}")
 
-        cmd_cls = self.handlers.get(cmd_key)
-        if cmd_cls:
-            command = cmd_cls(app, args)
-            command.execute()
-        else:
-            app.ui_log(f"Unknown command: {cmd_key}")
