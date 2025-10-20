@@ -5,8 +5,13 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer, Header, Input, Log, Static
 from textual.reactive import reactive
 
-from dm_tui.commands import BaseCommand, HelpCommand, QuitCommand, RollCommand
-from dm_tui.app.command_router import CommandRouter
+from ..commands import AutoRunCommand, BaseCommand, HelpCommand, LoadPackCommand, QuitCommand, RollCommand, RuleCommand, RulesCommand, SceneStartCommand, TickCommand
+from ..app.command_router import CommandRouter
+from ..app.baator_bridge import BaatorController
+
+import os
+APP_DIR = os.path.abspath(os.path.dirname(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, "../../../.."))
 
 class DMApp(App):
     CSS_PATH = "dm_tui.css"
@@ -21,8 +26,15 @@ class DMApp(App):
             "help": HelpCommand,
             "quit": QuitCommand,
             "roll": RollCommand,
+            "loadpack": LoadPackCommand,
+            "scene": SceneStartCommand,
+            "tick": TickCommand,
+            "run": AutoRunCommand,
+            "rule": RuleCommand,
+            "rules": RulesCommand,
         }
         self.router = CommandRouter()
+        self.controller = BaatorController(root=PROJECT_ROOT, world_name="dm_sandbox")
         for key, command in self.commands.items():
             self.router.register_command(self, key, command)
 

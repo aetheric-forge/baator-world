@@ -1,0 +1,69 @@
+{
+  "factions": {
+    "cf0f9215-0aad-4498-988d-eb5281b7c322": {
+      "id": {
+        "value": "cf0f9215-0aad-4498-988d-eb5281b7c322"
+      },
+      "name": "Valkyr's House",
+      "sigil": null,
+      "tags": []
+    }
+  },
+  "planes": {
+    "6df9710a-7488-4d95-b8c1-ca3818db209e": {
+      "id": {
+        "value": "6df9710a-7488-4d95-b8c1-ca3818db209e"
+      },
+      "name": "Baator Prime",
+      "entropy": 0.2,
+      "mana": 0.6
+    }
+  },
+  "relics": {},
+  "actors": {
+    "ca96c138-fab6-45f4-8a4a-2c46973c6b29": {
+      "id": {
+        "value": "ca96c138-fab6-45f4-8a4a-2c46973c6b29"
+      },
+      "name": "Valkyr",
+      "faction_id": {
+        "value": "cf0f9215-0aad-4498-988d-eb5281b7c322"
+      },
+      "hp": 12,
+      "power": 3,
+      "agility": 2,
+      "tags": []
+    },
+    "36c99cf1-7093-483e-b592-a2dc071eb20f": {
+      "id": {
+        "value": "36c99cf1-7093-483e-b592-a2dc071eb20f"
+      },
+      "name": "Drone",
+      "faction_id": null,
+      "hp": 8,
+      "power": 2,
+      "agility": 1,
+      "tags": []
+    }
+  },
+  "scenes": {
+    "8907419c-422e-458d-b4fc-51deafadec26": {
+      "id": {
+        "value": "8907419c-422e-458d-b4fc-51deafadec26"
+      },
+      "name": "Hall of Mirrors",
+      "plane_id": {
+        "value": "6df9710a-7488-4d95-b8c1-ca3818db209e"
+      },
+      "turn": 0,
+      "actors": [
+        {
+          "value": "ca96c138-fab6-45f4-8a4a-2c46973c6b29"
+        },
+        {
+          "value": "36c99cf1-7093-483e-b592-a2dc071eb20f"
+        }
+      ]
+    }
+  }
+}

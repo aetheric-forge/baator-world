@@ -1,5 +1,5 @@
 # dm_tui/commands/roll_command.py
-from dm_tui.core.dice import roll, DiceRoll
+from ..core.dice import roll, DiceRoll
 from .base_command import BaseCommand
 
 class RollCommand(BaseCommand):
