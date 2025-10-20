@@ -24,21 +24,18 @@ def rule_to_markdown(rule: Dict[str, Any]) -> str:
     if "id" in rule:
         out.append(f"_Rule ID_: `{rule['id']}`")
     if "description" in rule:
-        out.append(f"
-{rule['description']}
-")
+        out.append("**Description**")
+        out.append(rule['description'])
     if rule.get("inputs"):
         out.append("**Inputs**")
         for i in rule["inputs"]:
             out.append(f"- `{i}`")
     if rule.get("steps"):
-        out.append("
-**Resolution Steps**")
+        out.append("**Resolution Steps**")
         for s in rule["steps"]:
             out.append(f"1. {s}")
     if rule.get("examples"):
-        out.append("
-**Examples**")
+        out.append("**Examples**")
         for ex in rule["examples"]:
             kv = ", ".join(f"`{k}` = `{v}`" for k, v in ex.items())
             out.append(f"- {kv}")
