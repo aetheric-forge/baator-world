@@ -5,9 +5,9 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Footer, Header, Input, Log, Static
 from textual.reactive import reactive
 
-from ..commands import AutoRunCommand, BaseCommand, HelpCommand, LoadPackCommand, QuitCommand, RollCommand, RuleCommand, RulesCommand, SceneStartCommand, TickCommand
 from ..app.command_router import CommandRouter
 from ..app.baator_bridge import BaatorController
+from ..commands import plugins # trigger auto-discovery of plugin commands
 
 import os
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -22,21 +22,8 @@ class DMApp(App):
 
     def __init__(self):
         super().__init__()
-        self.commands: dict[str, type[BaseCommand]] = {
-            "help": HelpCommand,
-            "quit": QuitCommand,
-            "roll": RollCommand,
-            "loadpack": LoadPackCommand,
-            "scene": SceneStartCommand,
-            "tick": TickCommand,
-            "run": AutoRunCommand,
-            "rule": RuleCommand,
-            "rules": RulesCommand,
-        }
-        self.router = CommandRouter()
+        self.router = CommandRouter(self)
         self.controller = BaatorController(root=PROJECT_ROOT, world_name="dm_sandbox")
-        for key, command in self.commands.items():
-            self.router.register_command(self, key, command)
 
     # ------------------------------------------------------------------
     # Composition
@@ -81,4 +68,4 @@ class DMApp(App):
         if not cmdline:
             return
         self.ui_log(f"> {cmdline}")
-        self.router.dispatch(self, cmdline)
+        self.router.dispatch(cmdline)

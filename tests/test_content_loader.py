@@ -53,6 +53,6 @@ def test_content_loader_loads_pack(tmp_path):
     assert "planes" in data and len(data["planes"]) == 1
 
     # Rules attached to meta
-    rules = getattr(world, "_meta", {}).get("rules", [])
+    rules = getattr(world, "meta", {}).get("rules", [])
     assert len(rules) == 1
     assert rules[0]["id"] == "attack_basic"
