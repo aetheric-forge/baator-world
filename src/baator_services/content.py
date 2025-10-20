@@ -1,6 +1,8 @@
 from __future__ import annotations
+from collections import OrderedDict
+from curses import raw
 from dataclasses import dataclass, field
-from typing import Dict, Any, Iterable, List, Optional
+from typing import Dict, Any, List, Literal
 from typing_extensions import TypeGuard
 from baator_services.world import Faction, WorldService
 from baator_core.ids import Id
@@ -36,6 +38,84 @@ class ContentLoader:
     def _is_dict_meta(self, x: Any) -> TypeGuard[Dict[Any, Any]]:
         return isinstance(x, dict)
 
+    def _merge_rules_unique(
+        self,
+        existing: List[Dict[str, Any]],
+        added: List[Dict[str, Any]],
+        *,
+        policy: Literal["prefer_new", "prefer_old"] = "prefer_new",
+    ) -> List[Dict[str, Any]]:
+        """
+        Merge two rule lists, de-duplicating by 'id'.
+        - prefer_new: later (added) rules override earlier ones of the same id
+        - prefer_old: earlier (existing) rules are kept, added dups are ignored
+        """
+        if policy == "prefer_new":
+            # existing first, then added; added overwrites on same id
+            seq = existing + added
+        else:  # prefer_old
+            # added first, then existing; existing overwrites on same id
+            seq = added + existing
+
+        by_id: "OrderedDict[str, Dict[str, Any]]" = OrderedDict()
+        for r in seq:
+            rid = r.get("id")
+            if not isinstance(rid, str):
+                continue
+            by_id[rid] = r  # later assignment wins
+        return list(by_id.values())
+
+    def _normalize_ruleset(self, ruleset: Any) -> List[Dict[str, Any]]:
+        """
+        Coerce ruleset into a canonical: list[dict{id:str, steps:list[str], ...}]
+        - Accept dict-of-rules (values), list of rules, or a single rule dict
+        - Coerce steps to list[str]
+        - Support {"py": "..."} inside steps; ignore comment-only dicts
+        - Coerce scalars (e.g., 3) to "3"
+        """
+        if ruleset is None:
+            return []
+        if isinstance(ruleset, dict):
+            # treat as map of id->rule OR a single rule with keys (id, steps, ...)
+            values = list(ruleset.values()) if any(isinstance(v, dict) for v in ruleset.values()) else [ruleset]
+        elif isinstance(ruleset, list):
+            values = ruleset
+        else:
+            values = [ruleset]
+
+        out: List[Dict[str, Any]] = []
+        for r in values:
+            if not isinstance(r, dict):
+                # wrap non-dict into a rule-like dict
+                r = {"id": str(r), "steps": []}
+            rid = r.get("id")
+            # keep other fields (name, tags...) as-is
+            steps = r.get("steps", [])
+            if isinstance(steps, str):
+                steps = [steps]
+
+            fixed_steps: List[str] = []
+            if isinstance(steps, list):
+                for s in steps:
+                    if isinstance(s, str):
+                        fixed_steps.append(s)
+                    elif isinstance(s, dict):
+                        # allow {"py": "..."}; ignore pure comments/unknowns
+                        py = s.get("py")
+                        if isinstance(py, str):
+                            fixed_steps.append(py)
+                    elif isinstance(s, (int, float)):
+                        fixed_steps.append(str(s))
+                    # else: drop silently
+            else:
+                fixed_steps = [str(steps)]
+
+            rule = dict(r)
+            rule["id"] = str(rid) if rid is not None else "<no-id>"
+            rule["steps"] = fixed_steps
+            out.append(rule)
+        return out
+
     def load_pack(self, pack_name: str) -> LoadReport:
         repo = self.world.repo
         bundle = repo.load_pack(pack_name)
@@ -68,9 +148,17 @@ class ContentLoader:
 
         # Rules (optional, stored as opaque dicts attached to world metadata)
         ruleset = bundle.get("rules", [])
-        if ruleset:
+        norm_rules = self._normalize_ruleset(ruleset)
+        if norm_rules:
             raw_meta = getattr(self.world, "meta", {})
-            raw_meta.setdefault("rules", []).extend(ruleset)
+            existing = raw_meta.get("rules", [])
+            existing = self._normalize_ruleset(existing)
+            merged = self._merge_rules_unique(
+                existing,
+                norm_rules,
+                policy="prefer_new",
+            )
+            raw_meta["rules"] = merged
             if self._is_dict_meta(raw_meta):
                 meta: Dict[Any, Any] = raw_meta
             else:
