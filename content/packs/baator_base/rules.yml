@@ -1,0 +1,13 @@
+- id: attack_basic
+  name: Basic Attack Resolution
+  description: Resolve a standard attack in normal aether conditions.
+  inputs: ["attacker.power", "defender.hp", "env.mana"]
+  steps:
+    - base = attacker.power
+    - if env.mana > 0.7: base += 1
+    - defender.hp = max(0, defender.hp - base)
+  examples:
+    - attacker.power: 3
+      defender.hp: 10
+      env.mana: 0.6
+      out.defender.hp: 7

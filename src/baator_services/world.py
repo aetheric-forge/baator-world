@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import asdict, dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from baator_core.entities import Faction, Plane, Relic, Actor, Scene
 from baator_core.ids import Id
 from .repository import Repository
@@ -14,7 +14,7 @@ class WorldState:
     scenes: Dict[str, Scene] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
-        def m(obj): 
+        def m(obj):
             return asdict(obj)
         return {
             "factions": {k: m(v) for k, v in self.factions.items()},
@@ -41,6 +41,17 @@ class WorldService:
         self.world_name = world_name
         data = repo.load_world(world_name) or {}
         self.state = WorldState.from_dict(data) if data else WorldState()
+        self._meta: Dict[Any, Any] = {}
+
+    @property
+    def meta(self) -> Dict[Any, Any]:
+        return self._meta
+
+    @meta.setter
+    def meta(self, new_meta: Dict[Any, Any]) -> None:
+        if not isinstance(new_meta, dict):
+            raise TypeError("meta must be a dictionary")
+        self._meta = new_meta
 
     # CRUD-ish helpers
     def create_faction(self, name: str, *, sigil: str | None = None, tags: list[str] | None = None) -> str:

@@ -19,3 +19,6 @@ for r, d, f in os.walk('.', topdown=True):
     for name in f:
         print(f"{indent}  {name}")
 PY
+
+content:
+	python -m baator_sim.load_content_demo

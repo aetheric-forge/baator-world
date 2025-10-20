@@ -20,3 +20,10 @@ python -m baator_sim.demo
 ```
 
 This runs a tiny seeded simulation and prints an event log.
+
+## Testing
+
+```bash
+pip install -e .
+pytest
+```
