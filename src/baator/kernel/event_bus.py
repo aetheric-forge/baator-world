@@ -8,15 +8,13 @@ Design notes:
 This is intentionally small: the real project should swap adapters via DI/composition.
 """
 
-from typing import Callable, Dict, List, Any, Protocol
+from typing import Callable, Dict, List, Any, Optional, Protocol, TypeAlias
 import threading
 import queue
 import time
 from .events import Event
 
-class Subscriber(Protocol):
-    def __call__(self, event: Event) -> None:
-        ...
+Subscriber: TypeAlias = Callable[[Event], None]
 
 class TransportAdapter(Protocol):
     def publish(self, event: Event) -> None:
@@ -25,7 +23,7 @@ class TransportAdapter(Protocol):
         ...
 
 class EventBus:
-    def __init__(self, transport: TransportAdapter = None):
+    def __init__(self, transport: Optional[TransportAdapter] = None):
         # in-process fallback queue
         self._subs: Dict[str, List[Subscriber]] = {}
         self._queue: "queue.Queue[Event]" = queue.Queue()

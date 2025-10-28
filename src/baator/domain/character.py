@@ -1,11 +1,10 @@
 from dataclasses import dataclass, field
 from uuid import UUID
-from baator.kernel.base import AggregateRoot
-from baator.kernel.id import Id
+from .actor import Actor
 from baator.kernel.events import Event
 
 @dataclass
-class Character(AggregateRoot):
+class Character(Actor):
     hp: int = 10
     name: str = ""
 
