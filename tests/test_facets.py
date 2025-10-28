@@ -4,11 +4,10 @@ from __future__ import annotations
 import pytest
 from uuid import uuid4, UUID
 
-from baator.kernel.commands import Command
-from baator.kernel.layers import Layer
+from baator.kernel import Command, Layer
 from baator.domain import Actor
-from baator.util import clamp
 from baator.domain.facets import PhysicalFacet, CyberFacet, MythicFacet
+from baator.util import clamp
 
 
 # ---------- utilities ----------
