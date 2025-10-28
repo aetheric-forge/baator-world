@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: baator-v0.4-model
+Version: 0.4.0
+Summary: Reconstructed model scaffold for Baator v0.4
+Author: Valkyr
+License-File: LICENSE.md
+Dynamic: license-file

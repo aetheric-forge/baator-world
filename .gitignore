@@ -4,10 +4,6 @@
 .__*
 __pycache__/
 *.pyc
-dist/
-build/
 .vscode/
 .coverage
-.github/
-
-
+.venv/

@@ -1,25 +1,9 @@
 [build-system]
-requires = ["hatchling>=1.18"]
-build-backend = "hatchling.build"
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "baator-world"
-version = "0.1.0"
-description = "Baator Engine: core domain, rules, services, data adapters, sim, and apps."
-authors = [{name="Valkyr"}, {name="Athena"}]
-readme = "README.md"
-requires-python = ">=3.10"
-dependencies = []
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/baator_core", "src/baator_rules", "src/baator_services", "src/baator_data", "src/baator_sim"]
-
-[tool.hatch.build]
-include = [
-  "src/baator_core/**",
-  "src/baator_rules/**",
-  "src/baator_services/**",
-  "src/baator_data/**",
-  "src/baator_sim/**",
-  "content/**",
-]
+name = "baator-v0.4-model"
+version = "0.4.0"
+description = "Reconstructed model scaffold for Baator v0.4"
+authors = [{name="Valkyr"}]
