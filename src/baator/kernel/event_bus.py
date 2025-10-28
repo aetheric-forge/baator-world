@@ -23,12 +23,12 @@ class TransportAdapter(Protocol):
         ...
 
 class EventBus:
-    def __init__(self, transport: Optional[TransportAdapter] = None):
-        # in-process fallback queue
+    def __init__(self, transport: Optional[TransportAdapter] = None, *, sync: bool = False):
         self._subs: Dict[str, List[Subscriber]] = {}
         self._queue: "queue.Queue[Event]" = queue.Queue()
         self._running = False
         self._transport = transport
+        self._sync = sync
 
     def subscribe(self, event_name: str, fn: Subscriber) -> None:
         self._subs.setdefault(event_name, []).append(fn)
@@ -42,14 +42,16 @@ class EventBus:
                 print(f"[EventBus] subscriber error: {e}")
 
     def publish(self, event: Event) -> None:
-        # transport-level publish (e.g. RabbitMQ) if provided:
+        # If tests want deterministic behavior, dispatch inline.
+        if self._sync:
+            self._dispatch(event)
+            return
         if self._transport is not None:
             try:
                 self._transport.publish(event)
                 return
             except Exception as e:
                 print(f"[EventBus] transport publish failed, falling back: {e}")
-        # otherwise push to local queue for dispatch loop
         self._queue.put(event)
 
     def start(self) -> None:
