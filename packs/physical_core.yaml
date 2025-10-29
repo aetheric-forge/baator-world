@@ -1,0 +1,25 @@
+pack_id: aether.physical_core
+version: 1
+engine_min: 0.4
+namespace: physical
+description: Core physical rules (damage, heal)
+
+rules:
+  - id: attack.basic
+    layer: physical
+    when:                   # optional boolean conditions (all must pass)
+      - target.hp > 0
+    cost: "0"               # optional resource cost expression (arithmetic only)
+    roll: "1d20"            # primary roll (optional)
+    dc: 10                  # optional difficulty class threshold
+    on_success:
+      - type: command
+        name: "physical.take_damage"
+        payload:
+          layer: "physical"
+          amount: "1d8+STR" # dice+stat refs allowed (see eval notes)
+    on_failure:
+      - type: event
+        name: "physical.attack_missed"
+        payload:
+          reason: "miss"

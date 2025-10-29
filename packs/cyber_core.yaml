@@ -1,0 +1,21 @@
+# packs/cyber_core.yaml
+pack_id: aether.cyber_core
+version: 1
+engine_min: 0.4
+namespace: cyber
+
+rules:
+  - id: ice.attack
+    layer: cyber
+    roll: "1d20"
+    dc: 12
+    on_success:
+      - type: command
+        name: "cyber.ice_attack"
+        payload:
+          layer: "cyber"
+          damage: "2d6"
+    on_failure:
+      - type: event
+        name: "cyber.ice_glitch"
+        payload: { }
