@@ -9,6 +9,11 @@ class FakeRNG:
     def roll(self, sides): return self.seq.pop(0) if self.seq else 1
     def ping(self): return True
 
+class FixedRNG:
+    def roll(self, sides: int): return 4  # d20 → 4
+    def random_int(self, low, high): return low
+    def ping(self) -> bool: return True
+
 def test_dice_service_emits_requested_and_fulfilled_for_expr():
     bus = EventBus(sync=True); bus.start()
     events = []
@@ -37,3 +42,19 @@ def test_command_bus_routes_dice_commands():
     cbus.dispatch(Command(name="dice.roll_expr", payload={"expr":"1d6"}))
     bus.stop()
     assert seen["ok"] == 1
+
+def test_meta_is_flattened():
+    bus = EventBus(sync=True)
+    seen = {}
+    bus.subscribe("rng.fulfilled", lambda e: seen.update(e.payload))
+
+    svc = DiceService(FixedRNG(), bus)
+    svc.roll_adv(20, meta={"actor_id": "A1", "layer": "physical", "source": "tui", "debug": True})
+
+    # Flattened provenance
+    assert seen["actor_id"] == "A1"
+    assert seen["layer"] == "physical"
+    assert seen["source"] == "tui"
+
+    # No 'meta' blob
+    assert "meta" not in seen

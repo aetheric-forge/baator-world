@@ -8,12 +8,17 @@ class RNG(Protocol):
     def roll(self, sides:int)->int: ...
     def ping(self)->bool: ...
 
-def roll_expr(expr: str, rng: RNG) -> int:
-    m = R.match(expr)
-    if not m: raise ValueError("dice expr like '3d6+2' expected")
-    n, sides, mod = int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)
-    total = sum(rng.roll(sides) for _ in range(n)) + mod
+def roll_expr(expr: str, rng) -> int:
+    total, faces, _mod = roll_expr_detail(expr, rng)
     return total
+
+def roll_expr_detail(expr: str, rng) -> tuple[int, list[int], int]:
+    m = R.match(expr)
+    if not m:
+        raise ValueError("dice expr like '3d6+2' expected")
+    n, sides, mod = int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)
+    faces = [rng.roll(sides) for _ in range(n)]
+    return sum(faces) + mod, faces, mod
 
 def roll_advantage(sides:int, rng:RNG)->int:
     return max(rng.roll(sides), rng.roll(sides))
