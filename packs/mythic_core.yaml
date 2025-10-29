@@ -1,0 +1,23 @@
+pack_id: aether.mythic_core
+version: 1
+engine_min: 0.4
+namespace: mythic
+
+rules:
+  - id: invocation.bolt
+    layer: mythic
+    when: ["actor.essence > 0", "target.wards >= 0"]
+    cost: "1"                       # you can wire actual deduction later
+    roll: "1d20+actor.stats.WILL"
+    dc: "10 + target.wards"
+    on_success:
+      - type: event
+        name: "mythic.invoked"
+        payload: { effect: "bolt" }
+      - type: command
+        name: "physical.take_damage"
+        payload: { amount: "1d6+actor.stats.WILL", layer: "physical" }
+    on_failure:
+      - type: event
+        name: "mythic.backlash"
+        payload: { }

@@ -1,8 +1,10 @@
 import os
+from baator.kernel.context import ContextProvider
 from baator.kernel import EventBus, CommandBus
 from baator.runtime import DiceService
 from baator.interface import PythonRNG
 from baator.interface import SocketRNG
+from baator.runtime.context_provider import ActorRepo, SimpleContextProvider
 
 def choose_rng():
     mode = os.getenv("BAATOR_RNG", "python").lower()
@@ -15,9 +17,10 @@ def choose_rng():
 def bootstrap():
     event_bus = EventBus()
     cmd_bus = CommandBus()
-
     rng = choose_rng()
-    dice = DiceService(rng, event_bus)
+    ctx_provider = SimpleContextProvider(ActorRepo())
+
+    dice = DiceService(rng, event_bus, ctx_provider)
 
     # register commands
     cmd_bus.register("dice.roll_expr", dice.handle)

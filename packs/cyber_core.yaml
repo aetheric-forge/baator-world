@@ -7,15 +7,14 @@ namespace: cyber
 rules:
   - id: ice.attack
     layer: cyber
-    roll: "1d20"
-    dc: 12
+    when: ["target.integrity > 0"]
+    roll: "1d20+actor.stats.HACK"
+    dc: "10 + target.firewall"
     on_success:
       - type: command
         name: "cyber.ice_attack"
-        payload:
-          layer: "cyber"
-          damage: "2d6"
+        payload: { damage: "2d6+actor.stats.HACK//2", layer: "cyber" }
     on_failure:
       - type: event
-        name: "cyber.ice_glitch"
-        payload: { }
+        name: "cyber.attack_glitch"
+        payload: {}
