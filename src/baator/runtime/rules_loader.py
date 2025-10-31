@@ -18,7 +18,7 @@ class Rule:
     when: List[str] = field(default_factory=list)   # simple boolean conditions
     cost: Optional[str] = None                      # arithmetic expr (no names)
     roll: Optional[str] = None                      # dice expr
-    dc: Optional[int] = None
+    dc: Optional[str] = None
     on_success: List[Effect] = field(default_factory=list)
     on_failure: List[Effect] = field(default_factory=list)
 

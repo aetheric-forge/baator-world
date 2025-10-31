@@ -6,8 +6,7 @@ python -m dm_tui
 import sys
 from typing import Optional, List
 from uuid import uuid4
-from baator.runtime import RNG
-from baator.kernel import CoreLoop, Command
+from baator.kernel import RNG, CoreLoop, Command
 from baator.runtime.bootstrap import choose_rng, bootstrap
 from baator.runtime.diagnostics import TraceRecorder
 from baator.domain import Scene, Participant

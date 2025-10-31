@@ -8,17 +8,22 @@ from baator.kernel.context import ContextProvider
 class ActorRepo:
     def get(self, actor_id: UUID) -> Actor | None: ...
 
+def _as_uuid(v):
+    try:
+        return UUID(str(v))
+    except (ValueError, TypeError):
+        return None
 class SimpleContextProvider(ContextProvider):
     def __init__(self, repo: ActorRepo):
         self.repo = repo
 
     def resolve(self, meta: Mapping[str, Any] | None) -> Mapping[str, Any] | None:
         ctx: dict[str, Any] = {}
-        aid: str | None = None
-        tid: str | None = None
+        aid: UUID | None = None
+        tid: UUID | None = None
         if meta is not None:
-            aid = meta.get("actor_id")
-            tid = meta.get("target_id")
+            aid = _as_uuid(meta.get("actor_id"))
+            tid = _as_uuid(meta.get("target_id"))
 
         if aid:
             ctx["actor"] = self._project(self.repo.get(UUID(str(aid))))
