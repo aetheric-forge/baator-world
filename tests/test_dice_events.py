@@ -1,6 +1,8 @@
+from baator.kernel import expr_adv
 from baator.kernel.event_bus import EventBus
 from baator.kernel.command_bus import CommandBus
 from baator.kernel.commands import Command
+from baator.runtime.context_provider import ActorRepo, SimpleContextProvider
 from baator.runtime.dice_service import DiceService
 
 class FakeRNG:
@@ -14,13 +16,15 @@ class FixedRNG:
     def random_int(self, low, high): return low
     def ping(self) -> bool: return True
 
+ctx_provider = SimpleContextProvider(ActorRepo())
+
 def test_dice_service_emits_requested_and_fulfilled_for_expr():
     bus = EventBus(sync=True); bus.start()
     events = []
     bus.subscribe("rng.requested",  lambda e: events.append(("req", e.payload)))
     bus.subscribe("rng.fulfilled",  lambda e: events.append(("ok", e.payload)))
 
-    svc = DiceService(FakeRNG([3,3,4]), bus)  # 3d6+2 => 12
+    svc = DiceService(FakeRNG([3,3,4]), bus, ctx_provider)  # 3d6+2 => 12
     res = svc.roll_expression("3d6+2", meta={"test": True})
 
     bus.stop()
@@ -36,7 +40,7 @@ def test_command_bus_routes_dice_commands():
     bus.subscribe("rng.fulfilled", lambda e: seen.__setitem__("ok", seen["ok"]+1))
 
     cbus = CommandBus()
-    svc = DiceService(FakeRNG([6]), bus)  # d20 adv/dis will use provided seq minimally
+    svc = DiceService(FakeRNG([6]), bus, ctx_provider)  # d20 adv/dis will use provided seq minimally
     cbus.register("dice.roll_expr", svc.handle)
 
     cbus.dispatch(Command(name="dice.roll_expr", payload={"expr":"1d6"}))
@@ -48,8 +52,8 @@ def test_meta_is_flattened():
     seen = {}
     bus.subscribe("rng.fulfilled", lambda e: seen.update(e.payload))
 
-    svc = DiceService(FixedRNG(), bus)
-    svc.roll_adv(20, meta={"actor_id": "A1", "layer": "physical", "source": "tui", "debug": True})
+    svc = DiceService(FixedRNG(), bus, ctx_provider)
+    svc.roll_expression(expr_adv(20), meta={"actor_id": "A1", "layer": "physical", "source": "tui", "debug": True})
 
     # Flattened provenance
     assert seen["actor_id"] == "A1"

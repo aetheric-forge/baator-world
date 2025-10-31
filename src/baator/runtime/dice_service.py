@@ -3,8 +3,9 @@ import re
 from typing import Any, Dict, Mapping, Optional, Protocol
 from uuid import uuid4
 from baator.kernel.context import ContextProvider
-from baator.kernel import EventBus, Event, Command
-from ..kernel.dice import RNG, roll_expr_detail
+from baator.kernel import EventBus, Event, Command, expr_adv, expr_dis
+from ..kernel.rng import RNG
+from ..kernel.rolls import roll_expr, expr_adv, expr_dis, RollDetail
 
 PROVENANCE_KEYS = ("actor_id", "layer", "source", "requester")
 
@@ -40,41 +41,16 @@ class DiceService:
         self.bus.publish(Event(name=name, payload=ev))
 
 
-
     def roll_expression(self, expr: str, *, ctx: Optional[Mapping[str, Any]] = None, meta=None) -> int:
         rid = str(uuid4()); meta = meta or {}
         self._emit("rng.requested", {"kind":"expr","expr":expr,"request_id":rid,"meta":meta})
         resolved = self._context(meta, ctx)
-        total, faces, mod = roll_expr_detail(expr, self.rng, ctx=resolved)
+        roll_detail: RollDetail = roll_expr(expr, self.rng, ctx=resolved, verbose=True)
         self._emit("rng.fulfilled", {
-            "kind":"expr","expr":expr,"result":total,"faces":faces,"modifier":mod,
-            "request_id":rid,"meta":meta
+            "kind":"expr","expr":expr,"result":roll_detail["result"] ,"faces":roll_detail["faces"], "kept":roll_detail["kept"],
+            "modifier":roll_detail["modifier"], "request_id":rid,"meta":meta
         })
-        return total
-
-    def roll_adv(self, sides: int, *, meta=None) -> int:
-        rid = str(uuid4()); meta = meta or {}
-        r1 = self.rng.roll(sides); r2 = self.rng.roll(sides)
-        res = max(r1, r2)
-        self._emit("rng.requested", {"kind":"adv","sides":sides,"request_id":rid,"meta":meta})
-        self._emit("rng.fulfilled", {
-            "kind":"adv","sides":sides,"result":res,"faces":[r1, r2],
-            "picked":"max","request_id":rid,"meta":meta
-        })
-        return res
-
-    def roll_dis(self, sides: int, *, meta=None) -> int:
-        rid = str(uuid4()); meta = meta or {}
-        r1 = self.rng.roll(sides); r2 = self.rng.roll(sides)
-        res = min(r1, r2)
-        self._emit("rng.requested", {"kind":"dis","sides":sides,"request_id":rid,"meta":meta})
-        self._emit("rng.fulfilled", {
-            "kind":"dis","sides":sides,"result":res,"faces":[r1, r2],
-            "picked":"min","request_id":rid,"meta":meta
-        })
-        return res
-
-    # ----- command handlers (bus-friendly) -----
+        return roll_detail["result"]
 
     def handle(self, cmd: Command) -> None:
         """
@@ -88,8 +64,8 @@ class DiceService:
         if cmd.name == "dice.roll_expr":
             self.roll_expression(str(p["expr"]), ctx=ctx, meta=p.get("meta") or {})
         elif cmd.name == "dice.roll_adv":
-            self.roll_adv(int(p["sides"]), meta=p.get("meta") or {})
+            self.roll_expression(expr_adv(int(p["sides"])), meta=p.get("meta") or {})
         elif cmd.name == "dice.roll_dis":
-            self.roll_dis(int(p["sides"]), meta=p.get("meta") or {})
+            self.roll_expression(expr_dis(int(p["sides"])), meta=p.get("meta") or {})
         else:
             raise KeyError(cmd.name)
