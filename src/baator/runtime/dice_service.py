@@ -4,11 +4,10 @@ from typing import Any, Dict, Mapping
 from uuid import uuid4
 from baator.kernel.context import ContextProvider
 from baator.kernel import CommandBus, EventBus, Event, Command
+from baator.runtime import context_provider
 from ..kernel.rng import RNG
 from ..kernel.rolls import roll_expr
 from ..kernel.sexpr import parse_expression, eval_number
-
-PROVENANCE_KEYS = ("actor_id", "layer", "source", "requester")
 
 class DiceService:
     """
@@ -21,28 +20,24 @@ class DiceService:
         self.rng = rng
         self.bus = bus
         self.cmd = cmd_bus
-        self.ctx_provider = ctx_provider
+        self._ctx_provider = ctx_provider
         self.service_name = service_name
 
-    def _context(self, meta: dict | None, explicit_ctx: Mapping[str, Any] | None) -> Mapping[str, Any] | None:
-        if explicit_ctx is not None:
-            return explicit_ctx
-        if self.ctx_provider is not None and meta:
-            return self.ctx_provider.resolve(meta)
-        return None
-
-    def _resolver(self, request_id: str, expr: str, ctx: Mapping[str, Any]) -> int:
+    def _resolver(self, request_id: str, expr: str, meta: Mapping[str, Any] | None = None) -> int:
+        ctx = self._ctx_provider.resolve(meta) or {}
+        self.bus.publish(Event("rng.requested", {"request_id": request_id, "kind": "expr", "expr": expr, **ctx}))
         detail = roll_expr(expr, self.rng, ctx=ctx, verbose=True)
-        self.bus.publish(Event("rng.fulfilled", {"request_id": request_id, "kind": "expr", "expr": expr, **detail}))
+        self.bus.publish(Event("rng.fulfilled", {"request_id": request_id, "kind": "expr", "expr": expr, **ctx, **detail}))
         return int(detail["result"])
 
-    def roll_expression(self, request_id: str, expr: str, *, ctx: Mapping[str, Any]) -> int:
-        return self._resolver(request_id, expr, ctx)
+    def roll_expression(self, request_id: str, expr: str, *, meta: dict | None = None) -> int:
+        return self._resolver(request_id, expr, meta)
 
-    def resolve_number(self, request_id: str, expr: str, *, ctx: Mapping[str, Any], meta: dict | None = None):
+    def resolve_number(self, request_id: str, expr: str, *, meta: dict | None = None):
+        ctx = self._ctx_provider.resolve(meta) or {}
         parsed = parse_expression(expr)
         val = eval_number(request_id, parsed, ctx, resolve_dice=self._resolver)
-        self.bus.publish(Event("dice.resolved", {"request_id": request_id, "expr": expr, "result": val, **(meta or {})}))
+        self.bus.publish(Event("dice.resolved", {"request_id": request_id, "expr": expr, "result": val, **(ctx or {})}))
 
     def handle(self, cmd: Command) -> None:
         """
@@ -52,14 +47,13 @@ class DiceService:
           - dice.roll_dis    payload: {sides, meta?}
         """
         p = cmd.payload
-        ctx = p.get("ctx") or {}
         meta = p.get("meta") or {}
         request_id = p.get("request_id") or str(uuid4())
         if cmd.name == "dice.roll_expression":
             expr = str(p["expr"])
-            self.roll_expression(request_id, expr, ctx=ctx)
+            self.roll_expression(request_id, expr, meta=meta)
         elif cmd.name == "dice.resolve_number":
             expr = str(p["expr"])
-            self.resolve_number(request_id, expr, ctx=ctx, meta=meta)
+            self.resolve_number(request_id, expr, meta=meta)
         else:
             raise KeyError(cmd.name)

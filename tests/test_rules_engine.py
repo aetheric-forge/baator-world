@@ -1,5 +1,6 @@
 from baator.kernel import CommandBus, EventBus
-from baator.runtime import RulesEngine, load_rule_pack, RulesRegistry
+from baator.runtime import DiceService, RulesEngine, load_rule_pack, RulesRegistry
+from baator.runtime.context_provider import ActorRepo, SimpleContextProvider
 
 class FixedRNG:
     def roll(self, sides:int)->int: return 6
@@ -33,10 +34,13 @@ rules:
     bus = EventBus(sync=True)
     cmd = CommandBus()
     seen = {"cmds": [], "evts": []}
+
+    svc = DiceService(FixedRNG(), bus, cmd, SimpleContextProvider(ActorRepo()))
+    cmd.register("dice.resolve_number", svc.handle)
     cmd.register("physical.take_damage", lambda c: seen["cmds"].append(c.payload))
     bus.subscribe("physical.attack_missed", lambda e: seen["evts"].append(e.payload))
 
-    eng = RulesEngine(cmd, bus, rng=FixedRNG())
+    eng = RulesEngine(cmd, bus)
     rule = reg.get("physical.attack.basic")
     ctx = {"target": {"hp": 10}}
     result = eng.apply(rule, ctx=ctx, provenance={"actor_id":"A1","layer":"physical","source":"test"})
