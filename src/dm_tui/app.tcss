@@ -1,0 +1,21 @@
+# app.tcss (or set CSS in App.CSS)
+# A simple three-row layout: header, log, input
+
+Screen {
+  layout: grid;
+  grid-size: 3 1;
+  grid-rows: 3 1fr auto;   /* header, content, input */
+  grid-columns: 1fr;
+}
+
+Header { grid-row: 1; }
+#event-log {
+  grid-row: 2;
+  border: heavy $accent;
+  padding: 0 1;
+}
+Input {
+  grid-row: 3;
+  border: round $secondary;
+  padding: 0 1;
+}

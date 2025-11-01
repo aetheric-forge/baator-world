@@ -1,11 +1,12 @@
 from __future__ import annotations
 import re
-from typing import Any, Dict, Mapping, Optional, Protocol
+from typing import Any, Dict, Mapping
 from uuid import uuid4
 from baator.kernel.context import ContextProvider
-from baator.kernel import EventBus, Event, Command, expr_adv, expr_dis
+from baator.kernel import CommandBus, EventBus, Event, Command
 from ..kernel.rng import RNG
-from ..kernel.rolls import roll_expr, expr_adv, expr_dis, RollDetail
+from ..kernel.rolls import roll_expr
+from ..kernel.sexpr import parse_expression, eval_number
 
 PROVENANCE_KEYS = ("actor_id", "layer", "source", "requester")
 
@@ -16,9 +17,10 @@ class DiceService:
       - rng.fulfilled {result, rolls?, request_id, meta}
       - rng.failed    {reason, request_id, meta}
     """
-    def __init__(self, rng: RNG, bus: EventBus, ctx_provider: ContextProvider, service_name: str = "dice") -> None:
+    def __init__(self, rng: RNG, bus: EventBus, cmd_bus: CommandBus, ctx_provider: ContextProvider, service_name: str = "dice") -> None:
         self.rng = rng
         self.bus = bus
+        self.cmd = cmd_bus
         self.ctx_provider = ctx_provider
         self.service_name = service_name
 
@@ -29,28 +31,18 @@ class DiceService:
             return self.ctx_provider.resolve(meta)
         return None
 
-    def _emit(self, name: str, payload: Dict[str, Any]) -> None:
-        # Do not mutate caller's dicts
-        meta = dict(payload.get("meta") or {})
-        ev = {k: v for k, v in payload.items() if k != "meta"}
+    def _resolver(self, request_id: str, expr: str, ctx: Mapping[str, Any]) -> int:
+        detail = roll_expr(expr, self.rng, ctx=ctx, verbose=True)
+        self.bus.publish(Event("rng.fulfilled", {"request_id": request_id, "kind": "expr", "expr": expr, **detail}))
+        return int(detail["result"])
 
-        # Flatten selected provenance fields
-        for k in PROVENANCE_KEYS:
-            if k in meta:
-                ev[k] = meta[k]
-        self.bus.publish(Event(name=name, payload=ev))
+    def roll_expression(self, request_id: str, expr: str, *, ctx: Mapping[str, Any]) -> int:
+        return self._resolver(request_id, expr, ctx)
 
-
-    def roll_expression(self, expr: str, *, ctx: Optional[Mapping[str, Any]] = None, meta=None) -> int:
-        rid = str(uuid4()); meta = meta or {}
-        self._emit("rng.requested", {"kind":"expr","expr":expr,"request_id":rid,"meta":meta})
-        resolved = self._context(meta, ctx)
-        roll_detail: RollDetail = roll_expr(expr, self.rng, ctx=resolved, verbose=True)
-        self._emit("rng.fulfilled", {
-            "kind":"expr","expr":expr,"result":roll_detail["result"] ,"faces":roll_detail["faces"], "kept":roll_detail["kept"],
-            "modifier":roll_detail["modifier"], "request_id":rid,"meta":meta
-        })
-        return roll_detail["result"]
+    def resolve_number(self, request_id: str, expr: str, *, ctx: Mapping[str, Any], meta: dict | None = None):
+        parsed = parse_expression(expr)
+        val = eval_number(request_id, parsed, ctx, resolve_dice=self._resolver)
+        self.bus.publish(Event("dice.resolved", {"request_id": request_id, "expr": expr, "result": val, **(meta or {})}))
 
     def handle(self, cmd: Command) -> None:
         """
@@ -61,11 +53,13 @@ class DiceService:
         """
         p = cmd.payload
         ctx = p.get("ctx") or {}
-        if cmd.name == "dice.roll_expr":
-            self.roll_expression(str(p["expr"]), ctx=ctx, meta=p.get("meta") or {})
-        elif cmd.name == "dice.roll_adv":
-            self.roll_expression(expr_adv(int(p["sides"])), meta=p.get("meta") or {})
-        elif cmd.name == "dice.roll_dis":
-            self.roll_expression(expr_dis(int(p["sides"])), meta=p.get("meta") or {})
+        meta = p.get("meta") or {}
+        request_id = p.get("request_id") or str(uuid4())
+        if cmd.name == "dice.roll_expression":
+            expr = str(p["expr"])
+            self.roll_expression(request_id, expr, ctx=ctx)
+        elif cmd.name == "dice.resolve_number":
+            expr = str(p["expr"])
+            self.resolve_number(request_id, expr, ctx=ctx, meta=meta)
         else:
             raise KeyError(cmd.name)

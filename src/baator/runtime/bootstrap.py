@@ -14,18 +14,17 @@ def choose_rng():
         return SocketRNG(host=host, port=port)
     return PythonRNG()
 
-def bootstrap():
-    event_bus = EventBus()
+def bootstrap(sync_bus: bool=False):
+    event_bus = EventBus(sync=sync_bus)
     cmd_bus = CommandBus()
     rng = choose_rng()
     ctx_provider = SimpleContextProvider(ActorRepo())
 
-    dice = DiceService(rng, event_bus, ctx_provider)
+    dice = DiceService(rng, event_bus, cmd_bus, ctx_provider)
 
     # register commands
-    cmd_bus.register("dice.roll_expr", dice.handle)
-    cmd_bus.register("dice.roll_adv", dice.handle)
-    cmd_bus.register("dice.roll_dis", dice.handle)
+    cmd_bus.register("dice.resolve_number", dice.handle)
+    cmd_bus.register("dice.roll_expression", dice.handle)
 
     return event_bus, cmd_bus, dice
 
