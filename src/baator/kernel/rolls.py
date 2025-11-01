@@ -104,7 +104,7 @@ class RollDetail(TypedDict):
     kept: List[int]      # dice that counted (after kh/kl)
     modifier: int        # resolved modifier
 
-_R = re.compile(
+DICE_REGEX = re.compile(
     r"""
     ^\s*
     (?P<count>\d+)[dD](?P<sides>\d+)
@@ -129,7 +129,7 @@ def _resolve_modifier(sign: str | None, modraw: str | None, ctx: Mapping[str, An
 
 def _roll_expr_detail(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None
     ) -> Tuple[int, List[int], List[int], int]:
-    m = _R.match(expr)
+    m = DICE_REGEX.match(expr)
     if not m:
         raise ValueError(f"bad dice expression: {expr!r}")
 
@@ -151,8 +151,14 @@ def _roll_expr_detail(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None
     mod      = _resolve_modifier(sign, modraw, ctx)
     return subtotal + mod, faces, kept, mod
 
+from typing import Mapping, Any
+
+def is_dice_expr(expr: str) -> bool:
+    return bool(DICE_REGEX.match(expr.strip()))  # _R = your dice regex
+
 @overload
 def roll_expr(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, verbose: Literal[False] = False) -> int: ...
+
 @overload
 def roll_expr(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, verbose: Literal[True]) -> RollDetail: ...
 
@@ -161,6 +167,20 @@ def roll_expr(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, verb
     if not verbose:
         return total
     return RollDetail(expr=expr, result=total, faces=faces, kept=kept, modifier=mod)
+
+def number_from(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, verbose: bool = False) -> int:
+    """
+    Return an integer for either:
+      - dice expressions (roll via RNG), or
+      - plain numeric/path/arithmetic (eval via eval_safe).
+    """
+    s = expr.strip()
+    if is_dice_expr(s):
+        res = roll_expr(s, rng, ctx=ctx or {}, verbose=verbose)
+        return res if isinstance(res, int) else int(res["result"])
+    # not dice → evaluate safely as number (supports dotted paths)
+    return int(eval_safe(s, ctx or {}, mode="number"))
+
 
 # Sugar helpers: express adv/dis as data
 def expr_adv(sides: int) -> str: return f"2d{sides}kh1"

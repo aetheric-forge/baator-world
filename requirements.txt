@@ -1,11 +1,20 @@
--e git+https://github.com/aetheric-forge/baator-world.git@9b0e0e3c276212abca360c49b567eaa2543300de#egg=baator_v0.4_model&subdirectory=../../../baator-world.worktrees/baator-v0.4
--e git+https://github.com/aetheric-forge/baator-world.git@9b0e0e3c276212abca360c49b567eaa2543300de#egg=baator_world&subdirectory=../../../baator-world.worktrees/baator-v0.4
+-e git+https://github.com/aetheric-forge/baator-world.git@a7247f97748ce1ffd6f04580432a35adaf0c488d#egg=baator_v0.4_model&subdirectory=../../../baator-world.worktrees/baator-v0.4
+-e git+https://github.com/aetheric-forge/baator-world.git@a7247f97748ce1ffd6f04580432a35adaf0c488d#egg=baator_world&subdirectory=../../../baator-world.worktrees/baator-v0.4
 coverage==7.11.0
 iniconfig==2.3.0
+linkify-it-py==2.0.3
+markdown-it-py==4.0.0
+mdit-py-plugins==0.5.0
+mdurl==0.1.2
 packaging==25.0
+platformdirs==4.5.0
 pluggy==1.6.0
 pyaml==25.7.0
 Pygments==2.19.2
 pytest==8.4.2
 pytest-cov==7.0.0
 PyYAML==6.0.3
+rich==14.2.0
+textual==6.5.0
+typing_extensions==4.15.0
+uc-micro-py==1.0.3
