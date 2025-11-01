@@ -127,7 +127,7 @@ def _resolve_modifier(sign: str | None, modraw: str | None, ctx: Mapping[str, An
         val = int(eval_safe(m, ctx, mode="number"))
     return val if sign == "+" else -val
 
-def _roll_expr_detail(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None
+def _roll_expr_detail(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, meta: Mapping[str, Any] | None = None
     ) -> Tuple[int, List[int], List[int], int]:
     m = DICE_REGEX.match(expr)
     if not m:
@@ -157,13 +157,13 @@ def is_dice_expr(expr: str) -> bool:
     return bool(DICE_REGEX.match(expr.strip()))  # _R = your dice regex
 
 @overload
-def roll_expr(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, verbose: Literal[False] = False) -> int: ...
+def roll_expr(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, meta: Mapping[str, Any] | None = None, verbose: Literal[False] = False) -> int: ...
 
 @overload
-def roll_expr(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, verbose: Literal[True]) -> RollDetail: ...
+def roll_expr(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, meta: Mapping[str, Any] | None = None, verbose: Literal[True]) -> RollDetail: ...
 
-def roll_expr(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, verbose: bool = False) -> int | RollDetail:
-    total, faces, kept, mod = _roll_expr_detail(expr, rng, ctx=ctx)
+def roll_expr(expr: str, rng: RNG, *, ctx: Mapping[str, Any] | None = None, meta: Mapping[str, Any] | None = None, verbose: bool = False) -> int | RollDetail:
+    total, faces, kept, mod = _roll_expr_detail(expr, rng, ctx=ctx, meta=meta)
     if not verbose:
         return total
     return RollDetail(expr=expr, result=total, faces=faces, kept=kept, modifier=mod)

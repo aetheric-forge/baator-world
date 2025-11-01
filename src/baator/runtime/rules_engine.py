@@ -5,14 +5,12 @@ from uuid import uuid4
 
 from baator.kernel import Command, CommandBus, Event, EventBus
 from baator.runtime import Effect, Rule
-from ..kernel.rng import RNG
 from ..kernel.rolls import eval_safe  # predicates only
 
 class RulesEngine:
-    def __init__(self, cmd_bus: CommandBus, evt_bus: EventBus, rng: RNG):
+    def __init__(self, cmd_bus: CommandBus, evt_bus: EventBus):
         self.cmd = cmd_bus
         self.bus = evt_bus
-        self.rng = rng  # kept for constructor parity; not used directly
 
     # ---- request/response via buses ---------------------------------------
 

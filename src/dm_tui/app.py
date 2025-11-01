@@ -48,7 +48,7 @@ class DMApp(App):
                 p.hp = max(0, getattr(p, "hp", 10) - amt)
                 self.event_log.write(f"[red]-{amt}[/] to {name}  HP={p.hp}\n")        # Runtime
 
-        self.bus, self.cbus, _ = bootstrap(sync_bus=True)   # ensure sync EB for UI
+        self.bus, self.cbus = bootstrap(sync_bus=True)   # ensure sync EB for UI
         rng = choose_rng()
         self.engine = RulesEngine(self.cbus, self.bus, rng)
         self.registry = RulesRegistry()

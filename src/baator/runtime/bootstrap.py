@@ -26,5 +26,4 @@ def bootstrap(sync_bus: bool=False):
     cmd_bus.register("dice.resolve_number", dice.handle)
     cmd_bus.register("dice.roll_expression", dice.handle)
 
-    return event_bus, cmd_bus, dice
-
+    return event_bus, cmd_bus
